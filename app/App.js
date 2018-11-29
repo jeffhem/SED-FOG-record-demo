@@ -14,9 +14,22 @@ export default class App extends Component {
     this.recordToggle = this.recordToggle.bind(this);
   }
 
+  componentDidMount() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({
+        audio: true
+      })
+        .then(stream => {
+          this.visualize(stream);
+          this.mediaRecord = new MediaRecorder(stream);
+        })
+        .catch(console.log);
+    }
+  }
+
   visualize(stream) {
     const width = window.innerWidth;
-    const height = 300;
+    const height = 200;
     const canvas = document.querySelector('.visualizer');
     const audioCtx = this.audioCtx;
     const analyser = this.analyser;
@@ -52,25 +65,9 @@ export default class App extends Component {
     draw();
   }
 
-  componentDidMount() {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({
-        audio: true
-      })
-        .then(stream => {
-          this.visualize(stream);
-          this.mediaRecord = new MediaRecorder(stream);
-
-        })
-        .catch(console.log);
-    }
-  }
-
   recordToggle() {
     const {isRecording} = this.state;
     let chunks = [];
-    const soundClips = document.querySelector('.sound-clips');
-    console.log(this.mediaRecord);
 
     if (!isRecording) {
       this.mediaRecord.start();
@@ -91,9 +88,8 @@ export default class App extends Component {
       reader.readAsDataURL(blob);
       reader.onloadend = () => {
         const formData = new FormData();
-        formData.append("audio_data", reader.result);
-        formData.append('filename', Date(Date.now()).toISOString);
-        fetch('/savefile', {
+        formData.append('audio_data', reader.result);
+        fetch('http://localhost:4001/savefile', {
           method: 'POST',
           body: formData,
         })
@@ -102,31 +98,12 @@ export default class App extends Component {
       };
 
       chunks = [];
-      // var clipContainer = document.createElement('article');
-      // var clipLabel = document.createElement('p');
-      // var audio = document.createElement('audio');
-
-      // clipContainer.classList.add('clip');
-      // audio.setAttribute('controls', '');
-
-      // clipLabel.textContent = 'My unnamed clip';
-      // clipContainer.appendChild(audio);
-      // clipContainer.appendChild(clipLabel);
-      // soundClips.appendChild(clipContainer);
-
-      // audio.controls = true;
-
-      // var audioURL = window.URL.createObjectURL(blob);
-      // audio.src = audioURL;
-      console.log("recorder stopped");
-
-    }
+      console.log('recorder stopped');
+    };
 
     this.mediaRecord.ondataavailable = (e) => {
-      console.log('herer');
-      console.log(chunks);
       chunks.push(e.data);
-    }
+    };
   }
 
   render() {
@@ -135,7 +112,6 @@ export default class App extends Component {
       <div className={styles.app}>
         <canvas className="visualizer"></canvas>
         <button onClick={this.recordToggle} className={isRecording ? 'btn__recording' : 'btn__ready'}>{isRecording ? 'Stop Recording' : 'Start Recording'}</button>
-        <div className="sound-clips"></div>
       </div>
     );
   }

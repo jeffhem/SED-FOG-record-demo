@@ -5,8 +5,6 @@ const webpack = require('webpack');
 const webpackMiddleware = require('webpack-dev-middleware');
 const webpackHotMiddleware = require('webpack-hot-middleware');
 const config = require('./webpack.config.js');
-const fs = require('fs');
-const formidable = require('formidable');
 
 const isDeveloping = process.env.NODE_ENV !== 'production';
 const port = isDeveloping ? 4000 : process.env.PORT;
@@ -29,25 +27,15 @@ if (isDeveloping) {
 
   app.use(middleware);
   app.use(webpackHotMiddleware(compiler));
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    next();
+  });
   app.get('/', function response(req, res) {
     res.write(middleware.fileSystem.readFileSync(path.join(__dirname, 'dist/index.html')));
     res.end();
   });
-  app.post('/savefile', (req, res) => {
-    var form = new formidable.IncomingForm();
-
-    form.parse(req, (err, fields, files) => {
-      if (fields.audio_data) {
-        fs.writeFileSync(`./outputs/${new Date(Date.now()).toISOString()}.ogg`, Buffer.from(fields.audio_data.replace('data:audio/ogg;base64,', ''), 'base64'));
-        res.status(200).send('files saved!');
-      } else {
-        console.log('no audio found');
-        res.status(204).send('no audio found');
-      }
-    })
-  });
-  // serving the output files
-  app.use('/files', express.static('outputs'));
 } else {
   app.use(express.static(__dirname + '/dist'));
   app.get('/', function response(req, res) {
