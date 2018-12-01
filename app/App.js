@@ -89,11 +89,10 @@ export default class App extends Component {
       reader.onloadend = () => {
         const formData = new FormData();
         formData.append('audio_data', reader.result);
-        fetch('http://localhost:4001/savefile', {
+        fetch('http://localhost:5000/savefile', {
           method: 'POST',
           body: formData,
         })
-          .then(res => res.json())
           .then(console.log);
       };
 
